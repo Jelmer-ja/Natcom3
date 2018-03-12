@@ -1,4 +1,5 @@
 from random import random
+from scipy.spatial import distance
 import numpy as np
 import math
 
@@ -35,8 +36,16 @@ def getDistances(datapoints,particle):
         dists.append(centroid_dists)
     return dists
 
-def getFitness(particle,assignedcentroids):
-    return None
+def getFitness(particle,datapoints,assignedcentroids):
+    fitness = 0
+    for i in range(0,len(particle)):
+        centroid = particle[i]
+        centroid_max = 0
+        cluster_indices = [x for x in range(0,len(assignedcentroids)) if assignedcentroids[x] == i]
+        for j in cluster_indices:
+            centroid_max += distance.euclidean(tuple(centroid[0]),tuple(datapoints[j]))
+        fitness += centroid_max / (len(cluster_indices) + 0.01) #Smoothed by 0.01
+    return fitness / len(particle)
 
 def cluster(datapoints,classes,n_particles):
     ndim = len(datapoints[0])
@@ -58,7 +67,7 @@ def cluster(datapoints,classes,n_particles):
             assignedcentroids = []
             for ds in distances:
                 assignedcentroids.append(ds.index(min(ds)))
-            fitness = getFitness(p,assignedcentroids)
+            fitness = getFitness(p,datapoints,assignedcentroids)
 
 def import_data(d):
     f = open(d,'r')
