@@ -1,6 +1,7 @@
 from random import random
 from scipy.spatial import distance
 import numpy as np
+import matplotlib.pyplot as plt
 import math
 
 def plus(t1,t2):
@@ -13,14 +14,12 @@ def scalar_mult(s,t1):
     return tuple([s * t1[i] for i in range(0,len(t1))])
 
 def update(location,velocity, localOptimum,swarmOptimum):
-    w = 2 #Inertia wieght
+    w = 0.999 #Inertia weight
     c1 = 1 #Acceleration constant 1
     c2 = 1 #Acceleration constant 2
     r1 = random()
     r2 = random()
     result = plus(plus(scalar_mult(w,velocity), scalar_mult(r1 * c1,minus(tuple(localOptimum),tuple(location)))),scalar_mult(r2 * c2,minus(tuple(swarmOptimum),tuple(location))))
-    print(result)
-    print(location)
     return [list(plus(tuple(location),result)),list(result)]
 
 def printCentroids(particles):
@@ -77,7 +76,11 @@ def centroidFitness(particle,datapoints,assignedcentroids):
         output.append(centroid_max / (len(cluster_indices) + 0.01)) #Smoothed by 0.01
     return output
 
-def cluster(datapoints,classes,n_particles):
+def globalFitness(p): #Global fitness implemented as the average distance between centroids
+    distances = [distance.euclidean(tuple(x[0]),tuple(y[0])) for x in p for y in p if x != y]
+    return sum(distances) / len(distances)
+
+def cluster(datapoints,classes,n_particles,n_iterations):
     ndim = len(datapoints[0])
     n_clusters = len(set(classes))
 
@@ -87,16 +90,15 @@ def cluster(datapoints,classes,n_particles):
                   for c in range(0,n_clusters)] for p in range(0,n_particles)]
     particles = initialize(particles,datapoints,ndim)
 
-    #Iterate until the
-    done = False
-    while(done != True):
+    #Iterate until until n_interations has been reached
+    #Define local and global bests
+    globalBest = [[0.0 for x in range(0,ndim)] for i in range(0,n_particles)]
+    globalBestFitness = [999999.9 for i in range(0,n_particles)]
+    localBest = [[[0.0 for x in range(0,ndim)] for y in range(0,n_clusters)] for i in range(0,n_particles)]
+    localBestFitness = [[999999.9 for x in range(0,n_clusters)] for i in range(0,n_particles)]
+    fitnesses = [[],[],[]]
+    for k in range(0,n_iterations):
         for p in particles:
-            #Define local and global best
-            globalBest = [0.0 for x in range(0,ndim)]
-            globalBestFitness = 999999.9
-            localBest = [[0.0 for x in range(0,ndim)] for y in range(0,n_clusters)]
-            localBestFitness = [999999.9 for x in range(0,n_clusters)]
-
             #Calculate distances between cluster centroids and all datapoints
             distances = getDistances(datapoints,p)
             #Assign each datapoint the closest centroid by adding its index
@@ -105,25 +107,29 @@ def cluster(datapoints,classes,n_particles):
                 assignedcentroids.append(ds.index(min(ds)))
 
             #Calculate fitnesses and update local and global best
-            fitness = getFitness(p,datapoints,assignedcentroids)
-            if (fitness < globalBestFitness):
-                dummy = (sum([x[0][0] for x in p]),sum([x[0][1] for x in p]),sum([x[0][2] for x in p]),sum([x[0][3] for x in p]))
-                globalBest = tuple([x / n_clusters for x in dummy])
-                globalBestFitness = fitness
+            p_index = particles.index(p)
+            fitness = getFitness(p,datapoints,assignedcentroids) #globalFitness(p)#
+            fitnesses[p_index].append(fitness)
+            if (fitness < globalBestFitness[p_index]):
+                dummy = (sum([x[0][i] for x in p]) for i in range(0,ndim))
+                globalBest[p_index] = tuple([x / n_clusters for x in dummy])
+                globalBestFitness[p_index] = fitness
             cfitness = centroidFitness(p,datapoints,assignedcentroids)
             for i in range(0,n_clusters):
-                if(cfitness[i] < localBestFitness[i]):
-                    localBest[i] = p[i][0]
-            localBestFitness = centroidFitness([[localBest[i],0] for i in range(0,n_clusters)],datapoints,assignedcentroids)
+                if(cfitness[i] < localBestFitness[p_index][i]):
+                    localBest[p_index][i] = p[i][0]
+            localBestFitness[p_index] = centroidFitness([[localBest[p_index][i],0] for i in range(0,n_clusters)],datapoints,assignedcentroids)
 
             #Update centroid locations and velocities
             for i in range(0,n_clusters):
-                p[i] = update(p[i][0],p[i][1],localBest[i],globalBest)
+                p[i] = update(p[i][0],p[i][1],localBest[p_index][i],globalBest[p_index])
 
-        #Print the location of the centroids
-        printCentroids(particles)
+    #Print the location of the centroids and plot the fitness
+    printCentroids(particles)
+    plt.plot(range(0,n_iterations),fitnesses[2])
+    plt.show()
 
-def import_data(d):
+def import_data(d): #Get Iris dataset
     f = open(d,'r')
     classes = []
     datapoints = []
@@ -134,9 +140,15 @@ def import_data(d):
     f.close()
     return datapoints,classes
 
+def import_data_a1(): #Get Artificial dataset 1
+    datapoints = [[random() * 2 -1,random() * 2 -1] for i in range(0,400)]
+    classes = [1 if ((d[0] >= 0.7 or d[0] <= 0.3) and d[1] > -0.2 * d[0]) else 0 for d in datapoints]
+    return datapoints, classes
+
 def main():
-    datapoints,classes = import_data('irisdata/iris.data')
-    cluster(datapoints,classes,3)
+    #datapoints,classes = import_data('irisdata/iris.data')
+    datapoints,classes = import_data_a1()
+    cluster(datapoints,classes,3,100)
     #cluster(data)
 
 if(__name__ == '__main__'):
