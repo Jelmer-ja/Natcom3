@@ -20,7 +20,25 @@ max_pheromone = 1000
 # used to store the amount of pheromone per digit/cell combination
 pheromone_tabel = np.ones((9,9,9)) * max_pheromone
 
-def update_m()
+# TODO check if the cell has already ben filled in!!
+def update_m(pher_tab, sudoku_field = sudoku_field):
+    for row in range(9):
+        for col in range(9):
+            #TODO check if the cell has already ben filled in!!
+            cell_solution = check_solutions_per_cell(sudoku_field, row, col)
+            # TODO:
+            for i in cell_solution:
+                pher_tab[row][col][i]
+
+
+
+def check_solutions_per_cell(field, row, col):
+    solutions = []
+    row_sol = check_row_wise(field,row, col)
+    col_sol = check_col_wise(field, row, col)
+    squ_sol = check_sub_square(field, row, col)
+    solutions = row_sol + col_sol + squ_sol
+    return list(set(solutions))
 
 # check row for possible solutions
 def check_row_wise(field, row_idx):
