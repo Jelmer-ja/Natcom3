@@ -1,7 +1,7 @@
 import scipy.cluster.vq as vq
 from random import random
 
-#This class implements k-means clustering
+#This class implements regulr k-means clustering without
 def import_data(d):
     f = open(d,'r')
     classes = []
@@ -19,8 +19,9 @@ def import_data_a1(): #Get Artificial dataset 1
     return datapoints, classes
 
 def main():
-    datapoints,classes = import_data_a1()#('irisdata/iris.data')
-    clustering = vq.kmeans(datapoints,4)
+    datapoints,classes = import_data('irisdata/iris.data')
+    #datapoints,classes = import_data_a1()
+    clustering = vq.kmeans(datapoints,len(set(classes)))
     print(clustering)
 
 if(__name__ == '__main__'):

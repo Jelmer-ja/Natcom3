@@ -30,6 +30,7 @@ def printCentroids(particles):
             output += 'Cluster ' + str(j) + ':' + str(particles[i][j]) + '\n'
     print(output)
 
+#Initialize the centroids in random positions between two standard deviations from the mean for each dimension
 def initialize(particles,datapoints,ndim):
     averages = []
     for i in range(0,ndim):
@@ -54,6 +55,7 @@ def getDistances(datapoints,particle):
         dists.append(centroid_dists)
     return dists
 
+#Calculate the global fitness for a particle as defined by equation 8 in the paper.
 def getFitness(particle,datapoints,assignedcentroids):
     fitness = 0
     for i in range(0,len(particle)):
@@ -80,6 +82,7 @@ def globalFitness(p): #Global fitness implemented as the average distance betwee
     distances = [distance.euclidean(tuple(x[0]),tuple(y[0])) for x in p for y in p if x != y]
     return -sum(distances) / len(distances)
 
+#Calculate the fitness for individual centroids
 def cluster(datapoints,classes,n_particles,n_iterations):
     ndim = len(datapoints[0])
     n_clusters = len(set(classes))
@@ -127,7 +130,12 @@ def cluster(datapoints,classes,n_particles,n_iterations):
 
     #Print the location of the centroids and plot the fitness
     printCentroids(particles)
+    plt.plot(range(0,n_iterations),fitnesses[0])
+    plt.plot(range(0,n_iterations),fitnesses[1])
     plt.plot(range(0,n_iterations),fitnesses[2])
+    plt.title('Fitness over time (Artificial Dataset 1)')
+    plt.xlabel('Iterations')
+    plt.ylabel('Fitness')
     plt.show()
 
 def import_data(d): #Get Iris dataset
@@ -141,7 +149,7 @@ def import_data(d): #Get Iris dataset
     f.close()
     return datapoints,classes
 
-def import_data_a1(): #Get Artificial dataset 1
+def import_data_a1(): #Get Artificial dataset 1 as defined in the paper
     datapoints = [[random() * 2 -1,random() * 2 -1] for i in range(0,400)]
     classes = [1 if ((d[0] >= 0.7 or d[0] <= 0.3) and d[1] > -0.2 * d[0]) else 0 for d in datapoints]
     return datapoints, classes
